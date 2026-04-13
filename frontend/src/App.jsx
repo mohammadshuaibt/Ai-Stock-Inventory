@@ -131,7 +131,8 @@ function App() {
             product={selectedProduct}
             getHeaders={getHeaders}
             onBack={() => setView('detail')}
-            onSuccess={() => {
+            onSuccess={(updated) => {
+                setSelectedProduct(updated)
                 setView('detail')
                 fetchProducts()
             }}
@@ -229,7 +230,7 @@ function LoginModal({ onClose, onSuccess }) {
 }
 
 function Dashboard({ products, loading, error, role, onRetry, onAdd, onSearch, onProductClick }) {
-  const [viewMode, setViewMode] = useState('list')
+  const [viewMode, setViewMode] = useState('kanban')
   const [searchQuery, setSearchQuery] = useState('')
 
   const filteredProducts = products.filter(p => 
@@ -487,7 +488,8 @@ function EditProduct({ product, getHeaders, onBack, onSuccess }) {
         body: formData
       })
       if(res.ok) {
-        onSuccess()
+        const data = await res.json()
+        onSuccess(data.product)
       }
       else {
         const err = await res.json()

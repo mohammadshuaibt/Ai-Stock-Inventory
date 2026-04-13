@@ -336,7 +336,8 @@ async def update_product_details(
             update_data["embedding"] = embedding_result.embeddings[0].values
             print("Image and features updated successfully.")
 
-        supabase.table("products").update(update_data).eq("id", product_id).execute()
+        res = supabase.table("products").update(update_data).eq("id", product_id).execute()
+        updated_product = res.data[0]
         
         changes = []
         if old_data["name"] != name: changes.append(f"Name '{old_data['name']}' -> '{name}'")
@@ -352,7 +353,7 @@ async def update_product_details(
             "details": detail_msg
         }).execute()
         
-        return {"success": True}
+        return {"success": True, "product": updated_product}
     except Exception as e:
         import traceback
         print(f"Error updating product: {traceback.format_exc()}")
