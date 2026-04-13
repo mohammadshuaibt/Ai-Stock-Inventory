@@ -1,0 +1,15 @@
+{
+  "short_name": "StockManager",
+  "name": "AI Stock Inventory Manager",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "type": "image/png",
+      "sizes": "1024x1024"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a"
+}

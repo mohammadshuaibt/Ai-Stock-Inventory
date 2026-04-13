@@ -1,0 +1,27 @@
+# Root gitignore to protect the entire project
+
+# Security: NEVER commit these
+.env
+.env.local
+.env.*
+*.secret
+backend/.env
+
+# Dependencies
+node_modules/
+backend/venv/
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
