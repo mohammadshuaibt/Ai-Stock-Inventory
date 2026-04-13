@@ -15,6 +15,7 @@ create table public.products (
     -- If using gemini 'text-embedding-004' it's 768. 
     -- We will use 768 dimensions.
     embedding vector(768)
+
 );
 
 -- Set up Row Level Security (RLS)
@@ -67,3 +68,32 @@ as $$
   order by products.embedding <=> query_embedding
   limit match_count;
 $$;
+
+-- Create the users table for authentication
+create table public.users (
+    id uuid default gen_random_uuid() primary key,
+    username text unique not null,
+    password_hash text not null,
+    role text not null default 'user'
+);
+
+-- Insert default admin (Password: admin123)
+-- The password_hash is bcrypt for "admin123"
+insert into public.users (username, password_hash, role)
+values ('admin', '$2b$12$2tamwVwHLoi73xX/hY992OaqAzKA9Bxe7WbXC3etepD8UPY7vl8Im', 'admin');
+
+-- Create the product_logs table for audit tracking
+create table public.product_logs (
+    id uuid default gen_random_uuid() primary key,
+    product_id uuid references public.products(id) on delete cascade not null,
+    action text not null,
+    details text not null,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- RLS for product_logs (allow read/insert for testing)
+alter table public.product_logs enable row level security;
+create policy "Enable read access for all users on logs" on public.product_logs
+    for select using (true);
+create policy "Enable insert for all users on logs" on public.product_logs
+    for insert with check (true);
