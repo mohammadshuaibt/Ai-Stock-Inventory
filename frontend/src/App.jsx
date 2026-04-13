@@ -1,9 +1,9 @@
-// Detect environment: use VITE_API_BASE if provided (e.g. from Vercel), else fallback to localhost for dev
-const API_BASE = import.meta.env.VITE_API_BASE || (
-  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:8000/api'
-    : '/api'
-)
+import { useState, useEffect, useRef } from 'react'
+
+// Detect environment: use VITE_API_BASE if provided (e.g. from Vercel).
+// Otherwise dynamically point to port 8000 on the current host (works for localhost AND mobile phone IPs)
+const API_BASE = import.meta.env.VITE_API_BASE || `http://${window.location.hostname}:8000/api`
+
 
 
 function App() {
