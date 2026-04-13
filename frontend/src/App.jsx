@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
-
-// Detect environment: use localhost for dev, or the production URL once hosted
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:8000/api'
-  : '/api' // This assumes the frontend will be configured to proxy or the backend will be on the same domain
+// Detect environment: use VITE_API_BASE if provided (e.g. from Vercel), else fallback to localhost for dev
+const API_BASE = import.meta.env.VITE_API_BASE || (
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8000/api'
+    : '/api'
+)
 
 
 function App() {
