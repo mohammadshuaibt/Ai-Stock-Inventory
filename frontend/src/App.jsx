@@ -9,12 +9,31 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [apiMetrics, setApiMetrics] = useState(null)
   
   // Auth State
   const [token, setToken] = useState(localStorage.getItem('token') || null)
   const [role, setRole] = useState(localStorage.getItem('role') || 'guest')
   const [showLogin, setShowLogin] = useState(false)
   const [showReset, setShowReset] = useState(false)
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/system/metrics`)
+        if (res.ok) {
+          const data = await res.json()
+          setApiMetrics(data)
+        }
+      } catch (e) {
+        console.error("Failed to fetch metrics", e)
+      }
+    }
+    
+    fetchMetrics()
+    const interval = setInterval(fetchMetrics, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleLogin = (t, r) => {
     localStorage.setItem('token', t)
@@ -68,6 +87,15 @@ function App() {
         <div>
           <h1>Stock Manager</h1>
           <p className="subtitle">AI Powered Inventory</p>
+          {apiMetrics && role === 'admin' && (
+            <div style={{ marginTop: '8px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8' }}>
+              <span style={{ 
+                display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', 
+                background: apiMetrics.gemini_rpm_usage >= 10 ? 'var(--danger)' : apiMetrics.gemini_rpm_usage >= 5 ? '#eab308' : 'var(--success)'
+              }}></span>
+              AI Quota Usage (Live): {apiMetrics.gemini_rpm_usage} / {apiMetrics.gemini_rpm_limit} RPM
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
            {token && role === 'admin' && (

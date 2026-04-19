@@ -22,6 +22,18 @@ load_dotenv(Path(__file__).parent / ".env")
 # Initialize Google Gemini Client (Modern SDK)
 gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
+import time
+
+# In-memory tracking of Gemini API calls to monitor rate limits
+gemini_usage_timestamps = []
+
+def track_gemini_call():
+    global gemini_usage_timestamps
+    current_time = time.time()
+    gemini_usage_timestamps.append(current_time)
+    # Clean up timestamps older than 60 seconds
+    gemini_usage_timestamps = [t for t in gemini_usage_timestamps if current_time - t < 60]
+
 
 app = FastAPI(title="Stock Inventory Manager API")
 print("\n" + "="*50)
@@ -135,6 +147,7 @@ async def add_product(
         print("Extracting features with Gemini Vision...")
         img_pil = Image.open(io.BytesIO(image_bytes))
         prompt = "Describe this product incredibly precisely. Read all text, buttons, tags on it and describe its physical characteristics and shape. What are the unique identifying markers?"
+        track_gemini_call()
         vision_response = gemini_client.models.generate_content(
             model='gemini-flash-latest',
             contents=[prompt, img_pil]
@@ -146,6 +159,7 @@ async def add_product(
         # 3. Create a 768-Dimension vector embedding from that highly precise description
 
         print("Generating embedding...")
+        track_gemini_call()
         embedding_result = gemini_client.models.embed_content(
             model="gemini-embedding-001", 
             contents=detailed_description,
@@ -193,6 +207,7 @@ async def search_product(image: UploadFile = File(...)):
         img_pil = Image.open(io.BytesIO(image_bytes))
         
         prompt = "Describe this product precisely. Read all text, buttons, tags on it and describe its physical characteristics."
+        track_gemini_call()
         vision_response = gemini_client.models.generate_content(
             model='gemini-flash-latest',
             contents=[prompt, img_pil]
@@ -200,6 +215,7 @@ async def search_product(image: UploadFile = File(...)):
 
         description = vision_response.text
         
+        track_gemini_call()
         embedding_result = gemini_client.models.embed_content(
             model="gemini-embedding-001",
             contents=description,
@@ -320,6 +336,7 @@ async def update_product_details(
             # 2. Re-extract features with Gemini Vision
             img_pil = Image.open(io.BytesIO(image_bytes))
             prompt = "Describe this product incredibly precisely. Read all text, buttons, tags on it and describe its physical characteristics and shape. What are the unique identifying markers?"
+            track_gemini_call()
             vision_response = gemini_client.models.generate_content(
                 model='gemini-flash-latest',
                 contents=[prompt, img_pil]
@@ -328,6 +345,7 @@ async def update_product_details(
             update_data["basic_details"] = detailed_description
             
             # 3. Create new embedding
+            track_gemini_call()
             embedding_result = gemini_client.models.embed_content(
                 model="gemini-embedding-001",
                 contents=detailed_description,
@@ -371,6 +389,17 @@ def delete_product(product_id: str, admin: dict = Depends(get_current_admin)):
 def get_product_logs(product_id: str, admin: dict = Depends(get_current_admin)):
     res = supabase.table("product_logs").select("*").eq("product_id", product_id).order("created_at", desc=True).execute()
     return {"logs": res.data}
+
+@app.get("/api/system/metrics")
+def get_system_metrics():
+    global gemini_usage_timestamps
+    current_time = time.time()
+    # Clean up and count valid timestamps
+    gemini_usage_timestamps = [t for t in gemini_usage_timestamps if current_time - t < 60]
+    return {
+        "gemini_rpm_usage": len(gemini_usage_timestamps),
+        "gemini_rpm_limit": 15
+    }
 
 
 class PasswordReset(BaseModel):
